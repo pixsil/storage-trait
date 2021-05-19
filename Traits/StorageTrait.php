@@ -341,49 +341,36 @@ trait StorageTrait
     /**
      * delete the file
      *
-     * @return bool
+     * @return this
      */
-    public function fileDelete($field, $public = false)
+    public function fileDelete($field, $disk = null)
     {
         // guard if field excist
         if (!$value = $this->$field) {
-            return false;
+            return $this;
         }
-        // guard if file excist
-        if (!$this->fileExists($field, $public)) {
-            return false;
-        }
-        // guard delete file and folder
-        if (!File::deleteDirectory($this->getStoragePath($field, $public))) {
-            return false;
+        // guard delete file and folder, if corrent do cleanup in function
+        if (!Storage::disk($disk)->deleteDirectory($this->getDiskPath($field))) {
+            return $this;
         }
 
         // reset field
         $this->$field = '';
-        $this->save();
-
-        // is it public or private folder
-        $folder = 'private';
-        if ($public) {
-
-            // set public
-            $folder = 'public';
-        }
 
         // check if there are other uploaded files otherwise delete record folder
-        if (!File::allFiles(storage_path('app/'. $folder) .'/'. $this->getTable() .'/'. $this->id)) {
+        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->id)) {
 
             // delete
-            File::deleteDirectory(storage_path('app/'. $folder) .'/'. $this->getTable() .'/'. $this->id);
+            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->id);
         }
 
         // check if there are other uploaded files otherwise delete table folder
-        if (!File::allFiles(storage_path('app/'. $folder) .'/'. $this->getTable())) {
+        if (!Storage::disk($disk)->allFiles($this->getTable())) {
 
             // delete
-            File::deleteDirectory(storage_path('app/'. $folder) .'/'. $this->getTable());
+            Storage::disk($disk)->deleteDirectory($this->getTable());
         }
 
-        return true;
+        return $this;
     }
 }
