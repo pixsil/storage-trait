@@ -48,6 +48,24 @@ class DownloadController extends Controller
 }
 ```
 
+Download (Model):
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Traits\StorageTrait;
+
+class Download extends BaseModal
+{
+    use StorageTrait;
+
+    protected $table = false;
+}
+
+```
+
 You can use a different route name with the second secureLink parameter:
 
 $project->secureLink('file', 'a_different_route_name');
