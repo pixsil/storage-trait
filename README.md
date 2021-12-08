@@ -30,7 +30,7 @@ If you like to make use of the automatic secure link functionality "$project->se
 
 Route:
 ```php
-Route::get('downloads', [DownloadController::class, 'download'])->name('downloads');
+Route::get('downloads/{table}/{id}/{field}/{file}', [DownloadController::class, 'download'])->name('admin-downloads');
 ```
 
 DownloadController:
@@ -39,13 +39,20 @@ DownloadController:
 
 namespace App\Http\Controllers;
 
+use App\Models\Download;
+
 class DownloadController extends Controller
 {
-    public function download($table, $id, $field)
+    public function download($table, $id, $field, $file)
     {
         //
+        $download = new Download();
+        $download = $download->setTable($table)->where($field, $file)->findOrFail($id);
+
+        $download->streamFile($field);
     }
 }
+
 ```
 
 Download (Model):
