@@ -1,5 +1,6 @@
 <?php
 
+// version 17 Added secure download file function (see docs)
 // version 16 (recreated the upload part in the new way)
 
 namespace App\Traits;
@@ -141,6 +142,44 @@ trait StorageTrait
 
         // set path and filename
         return $path . $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
+    }
+
+    /**
+     * get a protected download link
+     */
+    public function secureLink($field, $download_route_name = 'downloads')
+    {
+        // guard must save first to receive id
+        if (!$id = $this->id) {
+            return null;
+        }
+        // guard if field excist
+        if (!$value = $this->$field) {
+            return null;
+        }
+
+        $route = route($download_route_name, explode('/', $this->getDiskFile($field)));
+
+        return $route;
+    }
+
+    /**
+     * get a protected download link
+     */
+    public function streamFile($field, $download_name = null, $disk = null, $headers = [])
+    {
+        // guard must save first to receive id
+        if (!$id = $this->id) {
+            return null;
+        }
+        // guard if field excist
+        if (!$value = $this->$field) {
+            return null;
+        }
+
+        $path = $this->getDiskFile($field);
+
+        Storage::disk($disk)->download($path, $download_name, $headers);
     }
 
     //    /**
