@@ -170,16 +170,20 @@ trait StorageTrait
     {
         // guard must save first to receive id
         if (!$id = $this->id) {
-            return null;
+            abort('404', 'Cannot find the download');
         }
         // guard if field excist
         if (!$value = $this->$field) {
-            return null;
+            abort('503', 'Cannot find this download field');
+        }
+        // cannot find the file
+        if (!$this->fileExists($field, $disk)) {
+            abort('404', 'Cannot find the download');
         }
 
         $path = $this->getDiskFile($field);
 
-        Storage::disk($disk)->download($path, $download_name, $headers);
+        return Storage::disk($disk)->download($path, $download_name, $headers);
     }
 
     //    /**
