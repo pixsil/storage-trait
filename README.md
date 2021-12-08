@@ -26,6 +26,12 @@ For a quick install, run this from your project root:
 
 ## Additional knowledge
 
+If you like to make use of the automatic secure link functionality "$project->secureLink('file')", you need to add the following to your project:
+
+Route:
+```php
+Route::get('downloads', [DownloadController::class, 'download'])->name('downloads');
+```
 
 ## Example
 
