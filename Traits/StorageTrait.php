@@ -1,5 +1,6 @@
 <?php
 
+// version 18 Added a function to upload with and without fail if not existing in request
 // version 17 Added secure download file function (see docs)
 // version 16 (recreated the upload part in the new way)
 
@@ -372,6 +373,24 @@ trait StorageTrait
         // guard file exist
         if (!$request->hasFile($request_field)) {
             abort(503, 'The file does not exists in the request');
+        }
+
+        $this->uploadIfExists($request, $field, $request_field, $disk, $hash);
+    }
+
+    /**
+     * upload the image
+     *
+     * @return $this
+     */
+    public function uploadIfExists($request, $field, $request_field = null, $disk = null, $hash = null)
+    {
+        // fill request field with normal field when empty
+        $request_field = $request_field ?? $field;
+
+        // guard file exist
+        if (!$request->hasFile($request_field)) {
+            return $this;
         }
         // guard no id, cannot save
         if (!$this->id) {
