@@ -187,7 +187,7 @@ trait StorageTrait
         // $disk = $disk ?? 'private';
         $path = $this->getDiskFile($field);
 
-        return Storage::disk($disk)->download($path);
+        return Storage::disk($disk)->download($path, $download_name, $headers);
     }
 
     //    /**
