@@ -1,5 +1,6 @@
 <?php
 
+// version 19 Changed behavior it will always default upload it to 'private' storage (if no disk is set)
 // version 18 Added a function to upload with and without fail if not existing in request
 // version 17 Added secure download file function (see docs)
 // version 16 (recreated the upload part in the new way)
@@ -48,7 +49,7 @@ trait StorageTrait
     //     * get storage path
     //     * example: assignment_attachments/2/attachment
     //     */
-    //    public function getProjectPath($field, $disk = null)
+    //    public function getProjectPath($field, $disk = 'private')
     //    {
     //        // guard must save first to receive id
     //        if (!$id = $this->id) {
@@ -56,7 +57,7 @@ trait StorageTrait
     //        }
     //
     //        // fall back to default disk
-    //        $disk = $disk ?? config('filesystems.default');
+    // //        $disk = $disk ?? 'private';
     //
     //        // get the path
     //        $path = Storage::disk($disk)->url('');
@@ -69,7 +70,7 @@ trait StorageTrait
     //     * get storage file path
     //     * example: assignment_attachments/2/attachment/be0330162f7b.pdf
     //     */
-    //    public function getProjectFile($field, $disk = null)
+    //    public function getProjectFile($field, $disk = 'private')
     //    {
     //        // guard must save first to receive id
     //        if (!$id = $this->id) {
@@ -81,7 +82,7 @@ trait StorageTrait
     //        }
     //
     //        // fall back to default disk
-    //        $disk = $disk ?? config('filesystems.default');
+    // //        $disk = $disk ?? 'private';
     //
     //        // get the path
     //        $path = Storage::disk($disk)->path('');
@@ -94,7 +95,7 @@ trait StorageTrait
      * get storage path
      * example: assignment_attachments/2/attachment
      */
-    public function getPublicFile($field, $disk = null)
+    public function getPublicFile($field, $disk = 'private')
     {
         var_dump('add this');exit;
     }
@@ -103,7 +104,7 @@ trait StorageTrait
      * get storage path
      * example: /home/vagrant/code/site_name/storage/app/public/assignment_attachments/2/attachment
      */
-    public function getSystemPath($field, $disk = null)
+    public function getSystemPath($field, $disk = 'private')
     {
         // guard must save first to receive id
         if (!$id = $this->id) {
@@ -111,7 +112,7 @@ trait StorageTrait
         }
 
         // fall back to default disk
-        $disk = $disk ?? config('filesystems.default');
+        // $disk = $disk ?? 'private';
 
         // get the path
         $path = Storage::disk($disk)->path('');
@@ -124,7 +125,7 @@ trait StorageTrait
      * get storage system file path
      * example: /home/vagrant/code/site_name/storage/app/public/assignment_attachments/2/attachment/be0330162f7b.pdf
      */
-    public function getSystemFile($field, $disk = null)
+    public function getSystemFile($field, $disk = 'private')
     {
         // guard must save first to receive id
         if (!$id = $this->id) {
@@ -136,7 +137,7 @@ trait StorageTrait
         }
 
         // fall back to default disk
-        $disk = $disk ?? config('filesystems.default');
+        // $disk = $disk ?? 'private';
 
         // get the path
         $path = Storage::disk($disk)->path('');
@@ -167,7 +168,7 @@ trait StorageTrait
     /**
      * get a protected download link
      */
-    public function streamFile($field, $download_name = null, $disk = null, $headers = [])
+    public function streamFile($field, $download_name = null, $disk = 'private', $headers = [])
     {
         // guard must save first to receive id
         if (!$id = $this->id) {
@@ -182,9 +183,11 @@ trait StorageTrait
             abort('404', 'Cannot find the download');
         }
 
+        // fall back to default disk
+        // $disk = $disk ?? 'private';
         $path = $this->getDiskFile($field);
 
-        return Storage::disk($disk)->download($path, $download_name, $headers);
+        return Storage::disk($disk)->download($path);
     }
 
     //    /**
@@ -348,7 +351,7 @@ trait StorageTrait
      *
      * @return bool
      */
-    public function fileExists($field, $disk = null)
+    public function fileExists($field, $disk = 'private')
     {
         if (!$value = $this->$field) {
             return false;
@@ -365,7 +368,7 @@ trait StorageTrait
      *
      * @return $this
      */
-    public function upload($request, $field, $request_field = null, $disk = null, $hash = null)
+    public function upload($request, $field, $request_field = null, $disk = 'private', $hash = null)
     {
         // fill request field with normal field when empty
         $request_field = $request_field ?? $field;
@@ -383,7 +386,7 @@ trait StorageTrait
      *
      * @return $this
      */
-    public function uploadIfExists($request, $field, $request_field = null, $disk = null, $hash = null)
+    public function uploadIfExists($request, $field, $request_field = null, $disk = 'private', $hash = null)
     {
         // fill request field with normal field when empty
         $request_field = $request_field ?? $field;
@@ -396,6 +399,9 @@ trait StorageTrait
         if (!$this->id) {
             abort(503, 'First save record before saving file.');
         }
+
+       // fall back to default disk
+       // $disk = $disk ?? 'private';
 
         $file = $request->$request_field;
 
@@ -424,7 +430,7 @@ trait StorageTrait
      *
      * @return self
      */
-    public function fileDelete($field, $disk = null)
+    public function fileDelete($field, $disk = 'private')
     {
         // guard if field exists
         if (!$value = $this->$field) {
