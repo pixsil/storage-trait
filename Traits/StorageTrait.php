@@ -186,6 +186,7 @@ trait StorageTrait
         // fall back to default disk
         // $disk = $disk ?? 'private';
         $path = $this->getDiskFile($field);
+vd($path);
 
         return Storage::disk($disk)->download($path, $download_name, $headers);
     }
@@ -356,7 +357,7 @@ trait StorageTrait
         if (!$value = $this->$field) {
             return false;
         }
-        if (!Storage::disk($disk)->exists($this->getDiskPath($field))) {
+        if (!Storage::disk($disk)->exists($this->getDiskPath($field)) .'/'. $value) {
             return false;
         }
 
