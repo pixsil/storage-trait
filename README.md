@@ -22,7 +22,15 @@ For a quick install, run this from your project root:
 
 ## Usage
 
+Disk:
+If no disk is provided, the storage trait is using the private disk by default. Make sure you got an private disk in your filesystem config:
 
+```php
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+        ],
+```
 
 ## Additional knowledge
 
