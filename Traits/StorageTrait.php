@@ -1,5 +1,7 @@
 <?php
 
+// version 20.1
+// version 20 Fixed some bugs with deling files
 // version 19 Changed behavior it will always default upload it to 'private' storage (if no disk is set)
 // version 18 Added a function to upload with and without fail if not existing in request
 // version 17 Added secure download file function (see docs)
@@ -44,52 +46,6 @@ trait StorageTrait
         // set path and filename
         return $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
     }
-
-    //    /**
-    //     * get storage path
-    //     * example: assignment_attachments/2/attachment
-    //     */
-    //    public function getProjectPath($field, $disk = 'private')
-    //    {
-    //        // guard must save first to receive id
-    //        if (!$id = $this->id) {
-    //            return null;
-    //        }
-    //
-    //        // fall back to default disk
-    // //        $disk = $disk ?? 'private';
-    //
-    //        // get the path
-    //        $path = Storage::disk($disk)->url('');
-    //
-    //        // set path and filename
-    //        return $path . $this->getTable() .'/'. $id .'/'. $field;
-    //    }
-
-    //    /**
-    //     * get storage file path
-    //     * example: assignment_attachments/2/attachment/be0330162f7b.pdf
-    //     */
-    //    public function getProjectFile($field, $disk = 'private')
-    //    {
-    //        // guard must save first to receive id
-    //        if (!$id = $this->id) {
-    //            return null;
-    //        }
-    //        // guard if field excist
-    //        if (!$value = $this->$field) {
-    //            return null;
-    //        }
-    //
-    //        // fall back to default disk
-    // //        $disk = $disk ?? 'private';
-    //
-    //        // get the path
-    //        $path = Storage::disk($disk)->path('');
-    //
-    //        // set path and filename
-    //        return $path . $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
-    //    }
 
     /**
      * get storage path
@@ -186,10 +142,168 @@ trait StorageTrait
         // fall back to default disk
         // $disk = $disk ?? 'private';
         $path = $this->getDiskFile($field);
-vd($path);
 
         return Storage::disk($disk)->download($path, $download_name, $headers);
     }
+
+    /**
+     * does the file exists
+     *
+     * @return bool
+     */
+    public function fileExists($field, $disk = 'private')
+    {
+        if (!$value = $this->$field) {
+            return false;
+        }
+        if (!Storage::disk($disk)->exists($this->getDiskFile($field))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * upload the image
+     * This function gives an error if the file is not in the request
+     *
+     * @return $this
+     */
+    public function upload($request, $field, $request_field = null, $disk = 'private', $hash = null)
+    {
+        // fill request field with normal field when empty
+        $request_field = $request_field ?? $field;
+
+        // guard file exist
+        if (!$request->hasFile($request_field)) {
+            abort(503, 'The file does not exists in the request');
+        }
+
+        $this->uploadIfInRequest($request, $field, $request_field, $disk, $hash);
+    }
+
+    /**
+     * upload the image
+     * This function ignores the upload by no file
+     *
+     * @return $this
+     */
+    public function uploadIfInRequest($request, $field, $request_field = null, $disk = 'private', $hash = null)
+    {
+        // fill request field with normal field when empty
+        $request_field = $request_field ?? $field;
+
+        // guard file exist
+        if (!$request->hasFile($request_field)) {
+            return $this;
+        }
+        // guard no id, cannot save
+        if (!$this->id) {
+            abort(503, 'First save record before saving file.');
+        }
+
+        // fall back to default disk
+        // $disk = $disk ?? 'private';
+
+        $file = $request->$request_field;
+
+        // delete if already there
+        $this->fileDelete($field, $disk);
+
+        //
+        $path_to_save = $this->getDiskPath($field);
+
+        // store file
+        $saved_filename_path = Storage::disk($disk)->putFile($path_to_save, $file);
+        $saved_filename = ltrim($saved_filename_path, $path_to_save);
+
+        // set the filename to the database
+        $this->$field = $saved_filename;
+
+        return $this;
+    }
+
+    /**
+     * delete the file
+     *
+     * @return self
+     */
+    public function fileDelete($field, $disk = 'private')
+    {
+        // guard if field exists
+        if (!$value = $this->$field) {
+            return $this;
+        }
+        // guard delete file and folder, if correct do cleanup in function
+        if (!Storage::disk($disk)->deleteDirectory($this->getDiskPath($field))) {
+            return $this;
+        }
+
+        // reset field
+        $this->$field = '';
+
+        // check if there are other uploaded files otherwise delete record folder
+        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->id)) {
+
+            // delete
+            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->id);
+        }
+
+        // check if there are other uploaded files otherwise delete table folder
+        if (!Storage::disk($disk)->allFiles($this->getTable())) {
+
+            // delete
+            Storage::disk($disk)->deleteDirectory($this->getTable());
+        }
+
+        return $this;
+    }
+
+    //    /**
+    //     * get storage path
+    //     * example: assignment_attachments/2/attachment
+    //     */
+    //    public function getProjectPath($field, $disk = 'private')
+    //    {
+    //        // guard must save first to receive id
+    //        if (!$id = $this->id) {
+    //            return null;
+    //        }
+    //
+    //        // fall back to default disk
+    // //        $disk = $disk ?? 'private';
+    //
+    //        // get the path
+    //        $path = Storage::disk($disk)->url('');
+    //
+    //        // set path and filename
+    //        return $path . $this->getTable() .'/'. $id .'/'. $field;
+    //    }
+
+    //    /**
+    //     * get storage file path
+    //     * example: assignment_attachments/2/attachment/be0330162f7b.pdf
+    //     */
+    //    public function getProjectFile($field, $disk = 'private')
+    //    {
+    //        // guard must save first to receive id
+    //        if (!$id = $this->id) {
+    //            return null;
+    //        }
+    //        // guard if field excist
+    //        if (!$value = $this->$field) {
+    //            return null;
+    //        }
+    //
+    //        // fall back to default disk
+    // //        $disk = $disk ?? 'private';
+    //
+    //        // get the path
+    //        $path = Storage::disk($disk)->path('');
+    //
+    //        // set path and filename
+    //        return $path . $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
+    //    }
 
     //    /**
     //     * get storage file path
@@ -346,119 +460,4 @@ vd($path);
     //
     //        return $url;
     //    }
-
-    /**
-     * does the file exists
-     *
-     * @return bool
-     */
-    public function fileExists($field, $disk = 'private')
-    {
-        if (!$value = $this->$field) {
-            return false;
-        }
-        if (!Storage::disk($disk)->exists($this->getDiskPath($field)) .'/'. $value) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * upload the image
-     *
-     * @return $this
-     */
-    public function upload($request, $field, $request_field = null, $disk = 'private', $hash = null)
-    {
-        // fill request field with normal field when empty
-        $request_field = $request_field ?? $field;
-
-        // guard file exist
-        if (!$request->hasFile($request_field)) {
-            abort(503, 'The file does not exists in the request');
-        }
-
-        $this->uploadIfExists($request, $field, $request_field, $disk, $hash);
-    }
-
-    /**
-     * upload the image
-     *
-     * @return $this
-     */
-    public function uploadIfExists($request, $field, $request_field = null, $disk = 'private', $hash = null)
-    {
-        // fill request field with normal field when empty
-        $request_field = $request_field ?? $field;
-
-        // guard file exist
-        if (!$request->hasFile($request_field)) {
-            return $this;
-        }
-        // guard no id, cannot save
-        if (!$this->id) {
-            abort(503, 'First save record before saving file.');
-        }
-
-       // fall back to default disk
-       // $disk = $disk ?? 'private';
-
-        $file = $request->$request_field;
-
-        // delete if already there
-        if ($this->fileExists($field, $disk)) {
-
-            // delete
-            $this->fileDelete($field, $disk);
-        }
-
-        //
-        $path_to_save = $this->getDiskPath($field);
-
-        // store file
-        $saved_filename_path = Storage::disk($disk)->putFile($path_to_save, $file);
-        $saved_filename = ltrim($saved_filename_path, $path_to_save);
-
-        // set the filename to the database
-        $this->$field = $saved_filename;
-
-        return $this;
-    }
-
-    /**
-     * delete the file
-     *
-     * @return self
-     */
-    public function fileDelete($field, $disk = 'private')
-    {
-        // guard if field exists
-        if (!$value = $this->$field) {
-            return $this;
-        }
-        // guard delete file and folder, if correct do cleanup in function
-        if (!Storage::disk($disk)->deleteDirectory($this->getDiskPath($field))) {
-            return $this;
-        }
-
-        // reset field
-        $this->$field = '';
-
-        // check if there are other uploaded files otherwise delete record folder
-        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->id)) {
-
-            // delete
-            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->id);
-        }
-
-        // check if there are other uploaded files otherwise delete table folder
-        if (!Storage::disk($disk)->allFiles($this->getTable())) {
-
-            // delete
-            Storage::disk($disk)->deleteDirectory($this->getTable());
-        }
-
-        return $this;
-    }
 }
