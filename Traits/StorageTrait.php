@@ -1,6 +1,6 @@
 <?php
 
-// version 20.1
+// version 21 Replaced ltrim for basepath function (some strange bug with slash appeared in some cases)
 // version 20 Fixed some bugs with deling files
 // version 19 Changed behavior it will always default upload it to 'private' storage (if no disk is set)
 // version 18 Added a function to upload with and without fail if not existing in request
@@ -215,7 +215,7 @@ trait StorageTrait
 
         // store file
         $saved_filename_path = Storage::disk($disk)->putFile($path_to_save, $file);
-        $saved_filename = ltrim($saved_filename_path, $path_to_save);
+        $saved_filename = basename($saved_filename_path);
 
         // set the filename to the database
         $this->$field = $saved_filename;
