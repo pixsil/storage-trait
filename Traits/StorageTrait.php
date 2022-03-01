@@ -1,5 +1,6 @@
 <?php
 
+// version 22 Added save by upload
 // version 21 Replaced ltrim for basepath function (some strange bug with slash appeared in some cases)
 // version 20 Fixed some bugs with deling files
 // version 19 Changed behavior it will always default upload it to 'private' storage (if no disk is set)
@@ -220,6 +221,9 @@ trait StorageTrait
         // set the filename to the database
         $this->$field = $saved_filename;
 
+        // save
+        $this->save();
+        
         return $this;
     }
 
