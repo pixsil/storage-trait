@@ -58,7 +58,7 @@ To upload a file accepts the following parameter:
 $book->upload(request, field, [disk], [hashed]);
 ```
 
-The first two parameters are nesseserally, the first is the Laravel request and the second is the database field that correspondent to the file. 
+The first two parameters are necessary, the first is the Laravel request and the second is the database field that correspondent to the file. 
 
 ```php
 $book = Book::first();
