@@ -2,10 +2,13 @@
 
 [THIS IS WORK IN PROGRSS]
 
-## Features / What is it?
+## What is it?
 
-* -
-* -
+This trait can be used on a model and makes storing het file handling very easy.
+
+All files uploaded correspondent to a column in the database of the model. For example if I have a books table with an file upload column book_attachment the filename of the uploaded file will be directly stored in the book_attachment column. The file will be stored in the defined storage with the following path structure:
+
+/table-name/field-name/id/filename.pdf
 
 ## Donate
 
@@ -21,8 +24,6 @@ mkdir -p app/Traits
 wget -O app/Traits/StorageTrait.php https://raw.githubusercontent.com/pixsil/storage-trait/main/Traits/StorageTrait.php
 ```
 
-## Usage
-
 Disk:
 If no disk is provided, the storage trait is using the private disk by default. Make sure you got an private disk in your filesystem config:
 
@@ -32,6 +33,108 @@ If no disk is provided, the storage trait is using the private disk by default. 
             'root' => storage_path('app/private'),
         ],
 ```
+
+## Usage
+
+Add the following to your model where you like to use the storage trait.
+
+Include at top:
+```php
+use App\Traits\StorageTrait;
+```
+
+In your class:
+```php
+use StorageTrait;
+```
+
+
+How to use
+
+Preparation:
+
+Add the following to your model where you like to use the storage trait.
+
+Include at top:
+use App\Traits\StorageTrait;
+
+In your class:
+use StorageTrait;
+
+Upload a file:
+
+To upload a file accepts the following parameter:
+
+$book->upload(request, field, [disk], [hashed]);
+
+The first two parameters are nesseserally, the first is the Laravel request and the second is the database field that correspondent to the file. 
+
+$book = Book::first();
+$book->upload($request, ‘book_attachment’);
+
+# The file will be automatically uploaded in the private folder with the following path
+# /storage/private/books/book_attachment/14/disney-attachment.pdf
+
+If you would like to upload the file to a specific disk you can send a third parameter with the disk to use
+
+$book = Book::first();
+$book->upload($request, ‘book_attachment’, ‘public');
+
+# The file will be automatically uploaded in the private folder with the following path
+# /public/books/book_attachment/14/disney-attachment.pdf
+
+Last but not least, you can also use the trait to gives the filename a md5 hash. The new filename will be saved in the database.
+$book = Book::first();
+$book->upload($request, ‘book_attachment’, null, true);
+
+# The file will be automatically uploaded in the private folder with the following path
+# /storage/private/books/book_attachment/14/5bc956936ec627b276793.pdf
+
+If a file already exists it will be replaced automatically.
+
+Get the file location:
+
+With the following function you can get the location of the file. The first parameter is the field and the second is if it is in the public folder or not.
+
+$book = Book::first();
+$book->getRelativeStoragePath(‘book_attachment’);
+
+# /storage/private/books/book_attachment/14/5bc956936ec627b276793.pdf
+
+If you would like to use a public directory linked to your public folder you can use the following:
+
+$book = Book::first();
+$book->getRelativeStoragePath(‘book_attachment’, true);
+
+# /books/book_attachment/14/5bc956936ec627b276793.pdf
+
+Delete a file
+
+$book = Book::first();
+$book->fileDelete(‘book_attachment’);
+
+# /books/book_attachment/14/5bc956936ec627b276793.pdf
+
+## Other functions
+
+getRelativeStoragePath
+getRelativeStorageFilePath
+getStorageFilePath
+getStorageFilePath
+getStorageImageFilePath_2
+createImage_2
+getImageUrl_2
+getImageUrl_2
+fileExists
+
+## Bonus
+
+Use with image-render-implementation. (Coming soon later!)
+
+
+
+
+
 
 ## Additional knowledge
 
