@@ -184,8 +184,9 @@ Download (Model):
 namespace App\Models;
 
 use App\Traits\StorageTrait;
+use Illuminate\Database\Eloquent\Model;
 
-class Download extends BaseModal
+class Download extends Model
 {
     use StorageTrait;
 
