@@ -36,6 +36,8 @@ If no disk is provided, the storage trait is using the private disk by default. 
 
 ## Usage
 
+### Preperation
+
 Add the following to your model where you like to use the storage trait.
 
 Include at top:
