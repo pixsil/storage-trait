@@ -260,6 +260,9 @@ trait StorageTrait
             Storage::disk($disk)->deleteDirectory($this->getTable());
         }
 
+        // save
+        $this->save();
+        
         return $this;
     }
 
