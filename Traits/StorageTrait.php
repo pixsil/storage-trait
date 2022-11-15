@@ -1,5 +1,6 @@
 <?php
 
+// version 23 Added save by file delete
 // version 22 Added save by upload
 // version 21 Replaced ltrim for basepath function (some strange bug with slash appeared in some cases)
 // version 20 Fixed some bugs with deling files
