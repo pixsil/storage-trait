@@ -25,18 +25,18 @@ wget -O app/Traits/StorageTrait.php https://raw.githubusercontent.com/pixsil/sto
 ```
 
 Disk:
-If no disk is provided, the storage trait is using the private disk by default. Make sure you got an private disk in your filesystem config:
+If no disk is provided, the storage trait is using the private disk by default. Make sure you got a private disk in your filesystem config:
 
 ```php
-        'private' => [
+        'db' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => storage_path('app/db'),
         ],
 ```
 
 ## Usage
 
-### Preperation
+### Preparation
 
 Add the following to your model where you like to use the storage trait.
 
