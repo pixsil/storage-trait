@@ -1,5 +1,6 @@
 <?php
 
+// version 25 changed names of variables
 // version 24 fixed filesystem paramter for get
 // version 23 Added save by file delete
 // version 22 Added save by upload
@@ -28,7 +29,7 @@ trait StorageTrait
         }
 
         // set path and filename
-        return $this->getTable() .'/'. $id .'/'. $field;
+        return $this->getTable() . '/' . $id . '/' . $field;
     }
 
     /**
@@ -47,7 +48,7 @@ trait StorageTrait
         }
 
         // set path and filename
-        return $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
+        return $this->getTable() . '/' . $id . '/' . $field . '/' . $value;
     }
 
     /**
@@ -56,7 +57,8 @@ trait StorageTrait
      */
     public function getPublicFile($field, $disk = 'db')
     {
-        var_dump('add this');exit;
+        var_dump('add this');
+        exit;
     }
 
     /**
@@ -77,7 +79,7 @@ trait StorageTrait
         $path = Storage::disk($disk)->path('');
 
         // set path and filename
-        return $path . $this->getTable() .'/'. $id .'/'. $field;
+        return $path . $this->getTable() . '/' . $id . '/' . $field;
     }
 
     /**
@@ -102,7 +104,7 @@ trait StorageTrait
         $path = Storage::disk($disk)->path('');
 
         // set path and filename
-        return $path . $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
+        return $path . $this->getTable() . '/' . $id . '/' . $field . '/' . $value;
     }
 
     /**
@@ -179,7 +181,7 @@ trait StorageTrait
         // $disk = $disk ?? 'db';
         $path = $this->getSystemFile($field, $disk);
 
-        return  Storage::disk($disk)->response($path);
+        return Storage::disk($disk)->response($path);
     }
 
     /**
@@ -251,7 +253,7 @@ trait StorageTrait
      *
      * @return $this
      */
-    public function put($name, $field, $file, $disk = 'db')
+    public function put($filename, $db_field, $file, $disk = 'db')
     {
         // guard no id, cannot save
         if (!$this->getRouteKey()) {
@@ -259,17 +261,17 @@ trait StorageTrait
         }
 
         // delete if already there
-        $this->fileDelete($field, $disk);
+        $this->fileDelete($db_field, $disk);
 
         //
-        $path_to_save = $this->getDiskPath($field);
+        $path_to_save = $this->getDiskPath($db_field);
 
         // store file
-        $saved_filename_path = Storage::disk($disk)->put($path_to_save .'/'. $name, $file);
-        $saved_filename = $name;
+        $saved_filename_path = Storage::disk($disk)->put($path_to_save . '/' . $filename, $file);
+        $saved_filename = $filename;
 
         // set the filename to the database
-        $this->$field = $saved_filename;
+        $this->$db_field = $saved_filename;
 
         // save
         $this->save();
@@ -328,10 +330,10 @@ trait StorageTrait
         $this->$field = '';
 
         // check if there are other uploaded files otherwise delete record folder
-        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->getRouteKey())) {
+        if (!Storage::disk($disk)->allFiles($this->getTable() . '/' . $this->getRouteKey())) {
 
             // delete
-            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->getRouteKey());
+            Storage::disk($disk)->deleteDirectory($this->getTable() . '/' . $this->getRouteKey());
         }
 
         // check if there are other uploaded files otherwise delete table folder
