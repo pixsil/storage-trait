@@ -1,10 +1,11 @@
 <?php
 
+// version 24 fixed filesystem paramter for get
 // version 23 Added save by file delete
 // version 22 Added save by upload
 // version 21 Replaced ltrim for basepath function (some strange bug with slash appeared in some cases)
 // version 20 Fixed some bugs with deling files
-// version 19 Changed behavior it will always default upload it to 'private' storage (if no disk is set)
+// version 19 Changed behavior it will always default upload it to 'db' storage (if no disk is set)
 // version 18 Added a function to upload with and without fail if not existing in request
 // version 17 Added secure download file function (see docs)
 // version 16 (recreated the upload part in the new way)
@@ -22,7 +23,7 @@ trait StorageTrait
     public function getDiskPath($field)
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             return null;
         }
 
@@ -37,7 +38,7 @@ trait StorageTrait
     public function getDiskFile($field)
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             return null;
         }
         // guard if field excist
@@ -53,7 +54,7 @@ trait StorageTrait
      * get storage path
      * example: assignment_attachments/2/attachment
      */
-    public function getPublicFile($field, $disk = 'private')
+    public function getPublicFile($field, $disk = 'db')
     {
         var_dump('add this');exit;
     }
@@ -62,15 +63,15 @@ trait StorageTrait
      * get storage path
      * example: /home/vagrant/code/site_name/storage/app/public/assignment_attachments/2/attachment
      */
-    public function getSystemPath($field, $disk = 'private')
+    public function getSystemPath($field, $disk = 'db')
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             return null;
         }
 
         // fall back to default disk
-        // $disk = $disk ?? 'private';
+        // $disk = $disk ?? 'db';
 
         // get the path
         $path = Storage::disk($disk)->path('');
@@ -83,10 +84,10 @@ trait StorageTrait
      * get storage system file path
      * example: /home/vagrant/code/site_name/storage/app/public/assignment_attachments/2/attachment/be0330162f7b.pdf
      */
-    public function getSystemFile($field, $disk = 'private')
+    public function getSystemFile($field, $disk = 'db')
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             return null;
         }
         // guard if field excist
@@ -95,7 +96,7 @@ trait StorageTrait
         }
 
         // fall back to default disk
-        // $disk = $disk ?? 'private';
+        // $disk = $disk ?? 'db';
 
         // get the path
         $path = Storage::disk($disk)->path('');
@@ -110,10 +111,10 @@ trait StorageTrait
     public function secureLink($field, $download_route_name = 'downloads')
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             return null;
         }
-        // guard if field excist
+        // guard if field exists
         if (!$value = $this->$field) {
             return null;
         }
@@ -124,12 +125,20 @@ trait StorageTrait
     }
 
     /**
-     * get a protected download link
+     * deprecated
      */
-    public function streamFile($field, $download_name = null, $disk = 'private', $headers = [])
+    public function streamFile($field, $download_name = null, $disk = 'db', $headers = [])
+    {
+        $this->download($field, $disk, $headers);
+    }
+
+    /**
+     * download the file
+     */
+    public function download($field, $download_name = null, $disk = 'db', $headers = [])
     {
         // guard must save first to receive id
-        if (!$id = $this->id) {
+        if (!$id = $this->getRouteKey()) {
             abort('404', 'Cannot find the download');
         }
         // guard if field excist
@@ -142,10 +151,35 @@ trait StorageTrait
         }
 
         // fall back to default disk
-        // $disk = $disk ?? 'private';
+        // $disk = $disk ?? 'db';
         $path = $this->getDiskFile($field);
 
         return Storage::disk($disk)->download($path, $download_name, $headers);
+    }
+
+    /**
+     * download the file
+     */
+    public function file($field, $disk = 'db', $headers = [])
+    {
+        // guard must save first to receive id
+        if (!$id = $this->getRouteKey()) {
+            abort('404', 'Cannot find the download');
+        }
+        // guard if field excist
+        if (!$value = $this->$field) {
+            abort('503', 'Cannot find this download field');
+        }
+        // cannot find the file
+        if (!$this->fileExists($field, $disk)) {
+            abort('404', 'Cannot find the download');
+        }
+
+        // fall back to default disk
+        // $disk = $disk ?? 'db';
+        $path = $this->getSystemFile($field, $disk);
+
+        return  Storage::disk($disk)->response($path);
     }
 
     /**
@@ -153,7 +187,7 @@ trait StorageTrait
      *
      * @return bool
      */
-    public function fileExists($field, $disk = 'private')
+    public function fileExists($field, $disk = 'db')
     {
         if (!$value = $this->$field) {
             return false;
@@ -171,7 +205,7 @@ trait StorageTrait
      *
      * @return $this
      */
-    public function upload($request, $field, $request_field = null, $disk = 'private', $hash = null)
+    public function upload($request, $field, $request_field = null, $disk = 'db', $hash = null)
     {
         // fill request field with normal field when empty
         $request_field = $request_field ?? $field;
@@ -190,7 +224,7 @@ trait StorageTrait
      *
      * @return $this
      */
-    public function uploadIfInRequest($request, $field, $request_field = null, $disk = 'private', $hash = null)
+    public function uploadIfInRequest($request, $field, $request_field = null, $disk = 'db', $hash = null)
     {
         // fill request field with normal field when empty
         $request_field = $request_field ?? $field;
@@ -200,14 +234,60 @@ trait StorageTrait
             return $this;
         }
         // guard no id, cannot save
-        if (!$this->id) {
+        if (!$this->getRouteKey()) {
             abort(503, 'First save record before saving file.');
         }
 
-        // fall back to default disk
-        // $disk = $disk ?? 'private';
-
         $file = $request->$request_field;
+
+        // delete if already there
+        $this->putFile($field, $file, $disk);
+
+        return $this;
+    }
+
+    /**
+     * Add file from stream etc
+     *
+     * @return $this
+     */
+    public function put($name, $field, $file, $disk = 'db')
+    {
+        // guard no id, cannot save
+        if (!$this->getRouteKey()) {
+            abort(503, 'First save record before saving file.');
+        }
+
+        // delete if already there
+        $this->fileDelete($field, $disk);
+
+        //
+        $path_to_save = $this->getDiskPath($field);
+
+        // store file
+        $saved_filename_path = Storage::disk($disk)->put($path_to_save .'/'. $name, $file);
+        $saved_filename = $name;
+
+        // set the filename to the database
+        $this->$field = $saved_filename;
+
+        // save
+        $this->save();
+
+        return $this;
+    }
+
+    /**
+     * Add file from request
+     *
+     * @return $this
+     */
+    public function putFile($field, $file, $disk = 'db')
+    {
+        // guard no id, cannot save
+        if (!$this->getRouteKey()) {
+            abort(503, 'First save record before saving file.');
+        }
 
         // delete if already there
         $this->fileDelete($field, $disk);
@@ -224,7 +304,7 @@ trait StorageTrait
 
         // save
         $this->save();
-        
+
         return $this;
     }
 
@@ -233,7 +313,7 @@ trait StorageTrait
      *
      * @return self
      */
-    public function fileDelete($field, $disk = 'private')
+    public function fileDelete($field, $disk = 'db')
     {
         // guard if field exists
         if (!$value = $this->$field) {
@@ -248,10 +328,10 @@ trait StorageTrait
         $this->$field = '';
 
         // check if there are other uploaded files otherwise delete record folder
-        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->id)) {
+        if (!Storage::disk($disk)->allFiles($this->getTable() .'/'. $this->getRouteKey())) {
 
             // delete
-            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->id);
+            Storage::disk($disk)->deleteDirectory($this->getTable() .'/'. $this->getRouteKey());
         }
 
         // check if there are other uploaded files otherwise delete table folder
@@ -263,7 +343,7 @@ trait StorageTrait
 
         // save
         $this->save();
-        
+
         return $this;
     }
 
@@ -271,15 +351,15 @@ trait StorageTrait
     //     * get storage path
     //     * example: assignment_attachments/2/attachment
     //     */
-    //    public function getProjectPath($field, $disk = 'private')
+    //    public function getProjectPath($field, $disk = 'db')
     //    {
     //        // guard must save first to receive id
-    //        if (!$id = $this->id) {
+    //        if (!$id = $this->getRouteKey()) {
     //            return null;
     //        }
     //
     //        // fall back to default disk
-    // //        $disk = $disk ?? 'private';
+    // //        $disk = $disk ?? 'db';
     //
     //        // get the path
     //        $path = Storage::disk($disk)->url('');
@@ -292,10 +372,10 @@ trait StorageTrait
     //     * get storage file path
     //     * example: assignment_attachments/2/attachment/be0330162f7b.pdf
     //     */
-    //    public function getProjectFile($field, $disk = 'private')
+    //    public function getProjectFile($field, $disk = 'db')
     //    {
     //        // guard must save first to receive id
-    //        if (!$id = $this->id) {
+    //        if (!$id = $this->getRouteKey()) {
     //            return null;
     //        }
     //        // guard if field excist
@@ -304,7 +384,7 @@ trait StorageTrait
     //        }
     //
     //        // fall back to default disk
-    // //        $disk = $disk ?? 'private';
+    // //        $disk = $disk ?? 'db';
     //
     //        // get the path
     //        $path = Storage::disk($disk)->path('');
@@ -321,7 +401,7 @@ trait StorageTrait
     //    public function getStorageImageFilePath_2($field, $identifier, $public = false)
     //    {
     //        // must save first to receive id
-    //        if (!$id = $this->id) {
+    //        if (!$id = $this->getRouteKey()) {
     //            return null;
     //        }
     //        // guard if field excist
@@ -342,7 +422,7 @@ trait StorageTrait
     //        }
     //
     //        // is it public or private folder
-    //        $folder = 'private';
+    //        $folder = 'db';
     //        if ($public) {
     //
     //            // set public
@@ -452,7 +532,7 @@ trait StorageTrait
     //    public function getImageUrl_2($field, $max_width, $max_height, $param = 0, $callback = null)
     //    {
     //        // gaurd must save first to receive id
-    //        if (!$id = $this->id) {
+    //        if (!$id = $this->getRouteKey()) {
     //            return null;
     //        }
     //        // guard if field excist
