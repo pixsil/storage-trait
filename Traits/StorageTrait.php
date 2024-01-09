@@ -1,5 +1,6 @@
 <?php
 
+// version 26 added base64 function
 // version 25 changed names of variables
 // version 24 fixed filesystem paramter for get
 // version 23 Added save by file delete
@@ -349,205 +350,20 @@ trait StorageTrait
         return $this;
     }
 
-    //    /**
-    //     * get storage path
-    //     * example: assignment_attachments/2/attachment
-    //     */
-    //    public function getProjectPath($field, $disk = 'db')
-    //    {
-    //        // guard must save first to receive id
-    //        if (!$id = $this->getRouteKey()) {
-    //            return null;
-    //        }
-    //
-    //        // fall back to default disk
-    // //        $disk = $disk ?? 'db';
-    //
-    //        // get the path
-    //        $path = Storage::disk($disk)->url('');
-    //
-    //        // set path and filename
-    //        return $path . $this->getTable() .'/'. $id .'/'. $field;
-    //    }
+    // only way to get images without needed an url (and be public)
+    public function getImageAsBase64($field, $disk = 'db')
+    {
+        // guard if field exists
+        if (!$value = $this->$field) {
+            return $this;
+        }
 
-    //    /**
-    //     * get storage file path
-    //     * example: assignment_attachments/2/attachment/be0330162f7b.pdf
-    //     */
-    //    public function getProjectFile($field, $disk = 'db')
-    //    {
-    //        // guard must save first to receive id
-    //        if (!$id = $this->getRouteKey()) {
-    //            return null;
-    //        }
-    //        // guard if field excist
-    //        if (!$value = $this->$field) {
-    //            return null;
-    //        }
-    //
-    //        // fall back to default disk
-    // //        $disk = $disk ?? 'db';
-    //
-    //        // get the path
-    //        $path = Storage::disk($disk)->path('');
-    //
-    //        // set path and filename
-    //        return $path . $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
-    //    }
+        $disk_file = $this->getDiskFile($field);
 
-    //    /**
-    //     * get storage file path
-    //     * $identifier = for default: $height _ $with for curstom: hash
-    //     * example: /home/vagrant/code/site_name/storage/app/private/projects/1/background_image/bg_500_250.jpg
-    //     */
-    //    public function getStorageImageFilePath_2($field, $identifier, $public = false)
-    //    {
-    //        // must save first to receive id
-    //        if (!$id = $this->getRouteKey()) {
-    //            return null;
-    //        }
-    //        // guard if field excist
-    //        if (!$value = $this->$field) {
-    //            return null;
-    //        }
-    //        // guard public path
-    //        if (!$pathinfo = pathinfo($value)) {
-    //            return null;
-    //        }
-    //        // guard filename
-    //        if (!isset($pathinfo['filename'])) {
-    //            return null;
-    //        }
-    //        // guard extension
-    //        if (!isset($pathinfo['extension'])) {
-    //            return null;
-    //        }
-    //
-    //        // is it public or private folder
-    //        $folder = 'db';
-    //        if ($public) {
-    //
-    //            // set public
-    //            $folder = 'public';
-    //        }
-    //
-    //
-    //
-    //        // generate new image name
-    //        $image_storage_name = $pathinfo['filename'] .'_'. $identifier .'.'. $pathinfo['extension'];
-    //
-    //        // set path and filename
-    //        $image_storage_path = storage_path('app/'. $folder) .'/'. $this->getTable() .'/'. $id .'/'. $field .'/'. $image_storage_name;
-    //
-    //        return $image_storage_path;
-    //    }
-    //
-    //    /*
-    //     * create image
-    //     *
-    //     * parameters:
-    //     * default = crop / keep-aspect-ratio / no-upscale / optimize
-    //     *
-    //     * f = change crop to fit
-    //     * s = change keep-aspect-ratio to strach
-    //     * u = change no-upscale to upscale
-    //     * r = change optimize to no-optimize
-    //     */
-    //    protected function createImage_2($field, $max_height, $max_width, $image_storage_path, $param = null, $callback = null, $public = false)
-    //    {
-    //        // get storage path
-    //        $filepath = $this->getStorageFilePath($field, $public);
-    //
-    //        // allow some more ram
-    //        // ini_set('memory_limit', '384M');
-    //
-    //        // get image
-    //        $image = Image::make($filepath);
-    //
-    //        // do image stuff
-    //        if (!is_callable($callback)) {
-    //
-    //            // if fit
-    //            if (strpos($param,'f')) {
-    //
-    //                // fit image
-    //                $image->fit($max_width, $max_height, function ($constraint) use ($param) {
-    //
-    //                    // if upscale allowed
-    //                    if (strpos($param,'u') === false) {
-    //
-    //                        // prevent from upscaling
-    //                        $constraint->upsize();
-    //                    }
-    //                });
-    //
-    //            // if normal
-    //            } else {
-    //
-    //                // nullable
-    //                $max_height_nullable = $max_height == 0 ? null : $max_height;
-    //                $max_width_nullable = $max_width == 0 ? null : $max_width;
-    //
-    //                // default do the resize
-    //                $image->resize($max_height_nullable, $max_width_nullable, function ($constraint) use ($param) {
-    //
-    //                    // if stratch allowed
-    //                    if (strpos($param,'s') === false) {
-    //
-    //                        // keep aspect, otherwise it get strached
-    //                        $constraint->aspectRatio();
-    //                    }
-    //
-    //                    // if upscale allowed
-    //                    if (strpos($param,'u') === false) {
-    //
-    //                        // prevent from upscaling
-    //                        $constraint->upsize();
-    //                    }
-    //                });
-    //            }
-    //
-    //        // use custom function
-    //        } else {
-    //
-    //            // do callback
-    //            call_user_func($callback, $image);
-    //        }
-    //
-    //        // save the image
-    //        $image->save($image_storage_path);
-    //
-    //        // save the image
-    //        if (!strpos($param,'r')) {
-    //
-    //            // optimize
-    //            ImageOptimizer::optimize($image_storage_path);
-    //        }
-    //
-    //        return $image;
-    //    }
-    //
-    //    /**
-    //     * get back the image object to serve
-    //     * for public images
-    //     */
-    //    public function getImageUrl_2($field, $max_width, $max_height, $param = 0, $callback = null)
-    //    {
-    //        // gaurd must save first to receive id
-    //        if (!$id = $this->getRouteKey()) {
-    //            return null;
-    //        }
-    //        // guard if field excist
-    //        if (!$value = $this->$field) {
-    //            return false;
-    //        }
-    //
-    //        //
-    //        $public_path = 'storage/'. $this->getTable() .'/'. $id .'/'. $field .'/'. $value;
-    //
-    //        // get image url
-    //        $url = ImageFactory::getImageUrl($public_path, $max_width, $max_height, $param);
-    //
-    //        return $url;
-    //    }
+        $file = Storage::disk($disk)->get($disk_file);
+
+        $file = base64_encode($file);
+
+        return $file;
+    }
 }
