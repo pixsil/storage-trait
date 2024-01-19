@@ -185,7 +185,7 @@ trait StorageTrait
         // $disk = $disk ?? 'db';
         $path = $this->getDiskFile($db_field);
 
-        return Storage::disk($disk)->readStream($path, $download_name, $headers);
+        return Storage::disk($disk)->readStream($path);
     }
 
     /**
