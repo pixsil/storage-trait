@@ -1,5 +1,7 @@
 <?php
 
+// version 30 fix
+// version 29 added readStream function
 // version 28 renamed field to db_field
 // version 27 fixed problem with disk
 // version 26 added base64 function
@@ -159,6 +161,31 @@ trait StorageTrait
         $path = $this->getDiskFile($db_field);
 
         return Storage::disk($disk)->download($path, $download_name, $headers);
+    }
+
+    /**
+     * read the stream
+     */
+    public function readStream($db_field, $disk = 'db')
+    {
+        // guard must save first to receive id
+        if (!$id = $this->getRouteKey()) {
+            abort('404', 'Cannot find the download');
+        }
+        // guard if field excist
+        if (!$value = $this->$db_field) {
+            abort('503', 'Cannot find this download field');
+        }
+        // cannot find the file
+        if (!$this->fileExists($db_field, $disk)) {
+            abort('404', 'Cannot find the download');
+        }
+
+        // fall back to default disk
+        // $disk = $disk ?? 'db';
+        $path = $this->getDiskFile($db_field);
+
+        return Storage::disk($disk)->readStream($path, $download_name, $headers);
     }
 
     /**
