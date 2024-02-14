@@ -1,5 +1,6 @@
 <?php
 
+// version 31 added feature it can also handle upload field
 // version 30 fix
 // version 29 added readStream function
 // version 28 renamed field to db_field
@@ -258,10 +259,10 @@ trait StorageTrait
     public function uploadIfInRequest($request, $db_field, $request_field = null, $disk = 'db', $hash = null)
     {
         // fill request field with normal field when empty
-        $request_field = $request_field ?? $db_field;
+        $request_field = $request_field ?: $db_field;
 
         // guard file exist
-        if (!$request->hasFile($request_field)) {
+        if (!$request->hasFile($request_field) && !$request->hasFile($request_field .'.file')) {
             return $this;
         }
         // guard no id, cannot save
@@ -269,7 +270,11 @@ trait StorageTrait
             abort(503, 'First save record before saving file.');
         }
 
-        $file = $request->$request_field;
+        if (is_array($request->$request_field)) {
+            $file = $request->$request_field['file'];
+        } else {
+            $file = $request->$request_field;
+        }
 
         // delete if already there
         $this->putFile($db_field, $file, $disk);
